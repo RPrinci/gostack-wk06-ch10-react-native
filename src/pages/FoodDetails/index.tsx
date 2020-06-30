@@ -88,23 +88,31 @@ const FoodDetails: React.FC = () => {
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    let extrasList = extras;
-    const extraIndex = extrasList.findIndex(extra => extra.id === id);
-    if (extraIndex >= 0) {
-      extrasList[extraIndex].quantity += 1;
-      setExtras(extrasList);
-    }
+    setExtras(state => {
+      return state.map(extra => {
+        if (extra.id === id) {
+          return {
+            ...extra,
+            quantity: extra.quantity + 1,
+          };
+        }
+        return extra;
+      });
+    });
   }
 
   function handleDecrementExtra(id: number): void {
-    let extrasList = extras;
-    const extraIndex = extrasList.findIndex(extra => extra.id === id);
-    if (extraIndex >= 0) {
-      if (extrasList[extraIndex].quantity > 0) {
-        extrasList[extraIndex].quantity -= 1;
-        setExtras(extrasList);
-      }
-    }
+    setExtras(state => {
+      return state.map(extra => {
+        if (extra.id === id && extra.quantity !== 0) {
+          return {
+            ...extra,
+            quantity: extra.quantity - 1,
+          };
+        }
+        return extra;
+      });
+    });
   }
 
   function handleIncrementFood(): void {
@@ -115,8 +123,13 @@ const FoodDetails: React.FC = () => {
     if (foodQuantity > 1) setFoodQuantity(foodQuantity - 1);
   }
 
-  const toggleFavorite = useCallback(() => {
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = useCallback(async () => {
+    if (isFavorite) {
+      await api.delete(`/favorites/${food.id}`);
+    } else {
+      await api.post('/favorites', food);
+    }
+    setIsFavorite(state => !state);
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
@@ -131,17 +144,19 @@ const FoodDetails: React.FC = () => {
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
+    // const data = {
+    //   ...food,
+    //   ...extras,
+    //   product_id: food.id,
+    // };
+
+    // delete data.id;
+
+    // await api.post(`orders`, data);
+
     Alert.alert('Pedido confirmado com sucesso!');
-    // try {
-    //   await api.post(`orders`, {
-    //     food,
-    //   });
-    // } catch (err) {
-    //   Alert.alert(
-    //     'Erro ao Confirmar Pedido',
-    //     'Ocorreu um erro ao confirmar seu pedido, por favor, tente novamente.',
-    //   );
-    // }
+
+    navigation.navigate('DashboardStack');
   }
 
   // Calculate the correct icon name
