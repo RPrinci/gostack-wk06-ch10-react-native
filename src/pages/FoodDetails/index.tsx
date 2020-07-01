@@ -73,15 +73,22 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      await api.get(`foods/${routeParams.id}`).then(response => {
-        const food = response.data as Food;
-        setFood(food);
-        let extrasList = food.extras;
-        extrasList.map(extra => {
-          extra.quantity = 0;
-        });
-        setExtras(extrasList);
-      });
+      const response = await api.get(`/foods/${routeParams.id}`);
+
+      const foodData = {
+        ...response.data,
+        formattedPrice: formatValue(response.data.price),
+      } as Food;
+
+      const extrasData = response.data.extras.map(
+        (extra: Omit<Extra, 'quantity'>) => ({
+          ...extra,
+          quantity: 0,
+        }),
+      );
+
+      setFood(foodData);
+      setExtras(extrasData);
     }
 
     loadFood();
@@ -116,18 +123,18 @@ const FoodDetails: React.FC = () => {
   }
 
   function handleIncrementFood(): void {
-    setFoodQuantity(foodQuantity + 1);
+    setFoodQuantity(state => state + 1);
   }
 
   function handleDecrementFood(): void {
-    if (foodQuantity > 1) setFoodQuantity(foodQuantity - 1);
+    setFoodQuantity(state => (state === 1 ? 1 : state - 1));
   }
 
   const toggleFavorite = useCallback(async () => {
     if (isFavorite) {
-      await api.delete(`/favorites/${food.id}`);
+      await api.delete(`favorites/${food.id}`);
     } else {
-      await api.post('/favorites', food);
+      await api.post(`favorites`, food);
     }
     setIsFavorite(state => !state);
   }, [isFavorite, food]);
